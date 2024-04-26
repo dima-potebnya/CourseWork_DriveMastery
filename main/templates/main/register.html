@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Реєстрація</title>
+	<link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/reg.css">
+	<script src="/static/js/render.js"></script>
+	<script src="/static/js/logout.js"></script>
+	<script src="/static/js/registration_form.js"></script>
+</head>
+<body>
+    <!-- Навігаційна панель -->
+    <nav>
+        <div class="logo">
+            <a href="/" id="logo-link">
+                <img src="/static/png/logo1.png" alt="Logo" id="logo">
+            </a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{% url 'guest' %}">Головна</a></li>
+            <li><a href="{% url 'about' %}">Про Нас</a></li>
+            <li><a href="{% url 'contacts' %}">Контакти</a></li>
+        </ul>
+        <div class="auth-buttons">
+            <button class="login" onclick="redirectToLogin()">Вхід</button>
+            <button class="register" onclick="redirectToRegister()">Реєстрація</button>
+        </div>
+    </nav>
+	<!-- Заголовок-->
+    <header>
+        <h1>Реєстрація</h1>
+    </header>
+	<!-- Основний вміст сторінки -->
+	<main>
+	    {% if user.is_authenticated %}
+        <h1 style="text-align: center; ">Success!</h1>
+        <p style="text-align: center; ">Congratulations, you have successfully registered!</p>
+		<form id="logout-form" action="{% url 'logout' %}"  method="post">
+            {% csrf_token %}
+			<input type="hidden" name="next" value="{{ request.path }}">
+            <input type="submit" value="Вийти">
+        </form>
+		{% else %}
+        <div class="container">
+            <form action="/guest_main/register/" method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <input type="submit" value="Зареєструватися">
+            </form>
+        </div>
+		{% endif %}
+    </main>
+	<!-- Підвал -->
+    <footer>
+        <div class="footer-logo">
+            <img src="/static/png/footer.png" alt="Footer Logo">
+        </div>
+        <div class="footer-text">Powered by Potebnia Dmytro © 2024</div>
+    </footer>
+</body>
+</html>

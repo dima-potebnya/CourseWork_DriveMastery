@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+	<script src="/static/js/logout.js"></script>
+</head>
+<body>
+    <!-- Навігаційна панель -->
+    <nav>
+        <div class="logo">
+            <a href="{% url 'administrator' %}" id="logo-link">
+                <img src="/static/png/logo1.png" alt="Logo" id="logo">
+            </a>
+        </div>
+		<div class="nav-container">
+			<ul class="nav-links">
+            	<li>
+            	    <a href="#">Меню</a>
+            	    <ul class="dropdown">
+            	        <li><a href="{% url 'administrator' %}">Головна</a></li>
+            	        <li><a href="{% url 'about_main' %}">Про Нас</a></li>
+             	       <li><a href="{% url 'contacts_main' %}">Контакти</a></li>
+            	    </ul>
+            	</li>
+            	<li>
+             	   <a href="#">Керування</a>
+             	   <ul class="dropdown">
+             	       <li><a href="{% url 'users' %}">Користувачі</a></li>
+             	       <li><a href="#">Матеріали</a></li>
+              	  </ul>
+            	</li>
+            	<li>
+                	<a href="#">Профіль</a>
+               	 <ul class="dropdown">
+                	    <li><a href="#">Особисті дані</a></li>
+                	    <li><a href="#">Редагування</a></li>
+                	    <li><a href="#" id="logout-link">Вихід</a></li>
+                	</ul>
+            	</li>
+        	</ul>
+		</div>
+    </nav>
+
+    <!-- Заголовок-->
+    <header>
+        <h1>{{ page_title }}</h1>
+    </header>
+
+    <!-- Основний вміст сторінки -->
+    <main>
+	    {% if show_content == 'index_main' %}
+            <div class="hero-image">
+                <img src="{{ image_url }}" alt="Auto School">
+            </div>
+        {% elif show_content == 'about_main' %}
+            {{ about_content|linebreaksbr }}
+        {% elif show_content == 'contacts_main' %}
+            {{ contacts_content|linebreaksbr }}
+		{% elif show_content == 'users' %}
+		    <div class="content-section">
+		        <h2>Користувачі</h2>
+		        <div class="users-filter">
+        		    <button class="dropdown-btn">Адміни</button>
+        		    <div class="dropdown-content">
+            		    <a href="#">Адміни</a>
+            		    <a href="#">Модератори</a>
+            		    <a href="#">Викладачі</a>
+            	    	<a href="#">Студенти</a>
+        		    </div>
+    		    </div>
+    		    <table>
+        		    <thead>
+            		    <tr>
+               		     <th>Ім'я</th>
+               		     <th>Логін</th>
+               		     <th>Роль</th>
+               	    	 <th>Дії</th>
+            	    	</tr>
+      		        </thead>
+        		    <tbody>
+            	    	{% for user in users %}
+            		    <tr>
+                	    	<td>{{ user.full_name }}</td>
+                	    	<td>{{ user.username }}</td>
+                	    	<td>{{ user.user_type }}</td>
+                	    	<td>
+                        		<a href="#" class="action-btn">Профіль</a>
+                        		<a href="#" class="action-btn">Видалити</a>
+                        		<a href="#" class="action-btn">Заблокувати</a>
+                	    	</td>
+            		    </tr>
+            	    	{% endfor %}
+        		    </tbody>
+    		    </table>
+		    </div>
+        {% endif %}
+    </main>
+    <!-- Підвал -->
+    <footer>
+        <div class="footer-logo">
+            <img src="/static/png/footer.png" alt="Footer Logo">
+        </div>
+        <div class="footer-text">Powered by Potebnia Dmytro © 2024</div>
+    </footer>
+</body>
+</html>
