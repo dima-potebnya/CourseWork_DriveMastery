@@ -1,19 +1,3 @@
-// Функція для відображення додаткового поля з категорією для студентів
-document.addEventListener("DOMContentLoaded", function() {
-    var roleField = document.getElementById("id_role");
-    var categoryField = document.getElementById("id_category");
-
-    function toggleCategoryField() {
-        if (roleField.value === "student") {
-            categoryField.parentElement.style.display = "block";
-        } else {
-            categoryField.parentElement.style.display = "none";
-        }
-    }
-
-    roleField.addEventListener("change", toggleCategoryField);
-    toggleCategoryField();  // Вызываем функцию один раз при загрузке страницы
-});
 // Функція для відображення додаткового поля з секретним кодом для адмінів
 document.addEventListener("DOMContentLoaded", function() { 
     var roleField = document.getElementById("id_role");
