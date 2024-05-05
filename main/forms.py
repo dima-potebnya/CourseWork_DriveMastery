@@ -12,8 +12,8 @@ User = get_user_model()
 
 fullname_validator=[
     RegexValidator(
-        regex=r'^[A-Za-zА-Яа-яЁёІіЇїЄєҐґ\s]{25,40}+$',
-        message='ПІБ може містити тільки букви, довжиною від 25 до 40 символів.',
+        regex=r'^[A-Za-zА-Яа-яЁёІіЇїЄєҐґ\s]{16,40}+$',
+        message='ПІБ може містити тільки букви, довжиною від 16 до 40 символів.',
         code='invalid_full_name'
     )
 ]
@@ -51,13 +51,7 @@ class RegistrationForm(forms.Form):
     role = forms.ChoiceField(label='Роль', choices=[('student', 'Студент'),
                                                     ('teacher', 'Викладач'), 
                                                     ('moderator', 'Модератор'), 
-                                                    ('admin', 'Адміністратор')])   
-    category = forms.ChoiceField(label='Категорія', choices=[('A', 'A'), 
-                                                             ('A1', 'A1'), 
-                                                             ('B', 'B'), 
-                                                             ('B1', 'B1'), 
-                                                             ('C', 'C'), 
-                                                             ('C1', 'C1')], required=False)    
+                                                    ('admin', 'Адміністратор')])      
     secret_admin_code = forms.CharField(label='Секретний код адміна', required=False)                                                             
 
     def clean_username(self):
@@ -85,7 +79,6 @@ class RegistrationForm(forms.Form):
         if role == 'admin' and secret_admin_code != settings.SECRET_ADMIN_CODE:
             raise ValidationError("Невірний секретний код адміна")
         return secret_admin_code
-    
         
 class AuthenticationForm(forms.Form):
     username = forms.CharField(label='Логін', max_length=15)
@@ -98,4 +91,6 @@ class AuthenticationForm(forms.Form):
         user = authenticate(username=username, password=password)
         if not user:
             raise ValidationError('Невірний логін чи пароль')
-        return cleaned_data    
+        if user.is_block:
+            raise ValidationError("Ваш обліковий запис заблокований або ще не підтверджений")
+        return cleaned_data     

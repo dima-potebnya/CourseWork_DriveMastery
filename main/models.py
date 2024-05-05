@@ -33,6 +33,7 @@ class CustomUser(AbstractBaseUser):
     email = models.EmailField(unique=True)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
+    is_block = models.BooleanField(default=True)
     user_type_choices = [('student', 'Student'),
                          ('teacher', 'Teacher'),
                          ('moderator', 'Moderator'),
@@ -68,11 +69,4 @@ class Teacher(CustomUser):
     pass
 
 class Student(CustomUser):
-    category_choices = [('A', 'A'), 
-                        ('A1', 'A1'), 
-                        ('B', 'B'), 
-                        ('B1', 'B1'), 
-                        ('C', 'C'), 
-                        ('C1', 'C1')
-    ]
-    category = models.CharField(max_length=2, choices=category_choices) 
+    pass

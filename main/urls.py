@@ -15,8 +15,11 @@ urlpatterns = [
     path('admin_main/about/', views.administrator, name='about_main'),
     path('admin_main/contacts/', views.administrator, name='contacts_main'),
     path('admin_main/users/', views.administrator, name='users'),
+    path('admin_main/account/', views.administrator, name='account'),
     
     path('moderator_main/', views.moderator, name='moderator'),
     path('teacher_main/', views.teacher, name='teacher'),
-    path('student_main/', views.student, name='student')
+    path('student_main/', views.student, name='student'),
+    
+    path('update_profile/', views.update_profile, name='update_profile')
 ]

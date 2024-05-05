@@ -1,17 +1,21 @@
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from .forms import RegistrationForm,AuthenticationForm
-from .models import *           
+from .models import *        
+import json   
     
 def index(request):
     if request.user.is_authenticated: # Проверка если пользователь вошёл (то перенаправляем его в его страницу)
         role = request.user.user_type  # Получаем роль пользователя
         return redirect(f'/{role}_main/')  # Перенаправляем на соответствующую страницу
     else: # Если не вошёл показываем содержимое главной страницы
-        context = main(request,'guest')
-        return render(request, 'main/index.html', context)  # Повертає шаблон administrator.html  
+        return main(request,'guest')  # Повертає шаблон administrator.html  
 
 def redirect_authenticated_user(request):
     if request.user.is_authenticated:
@@ -29,8 +33,10 @@ def register(request):
             password = form.cleaned_data['password']
             email = form.cleaned_data['email']
             role = form.cleaned_data['role']
-            category = form.cleaned_data.get('category')
-            
+            if role == 'admin':
+                blocked = False
+            else:
+                blocked = True
             # Хеширования пароля
             hashed_password = make_password(password)
             
@@ -53,12 +59,9 @@ def register(request):
                     username=username,
                     password=hashed_password,
                     email=email,
-                    user_type=role  # Присваиваем тип пользователя
+                    user_type=role,  # Присваиваем тип пользователя
+                    is_block=blocked
                 )
-                
-                # Если роль студента, добавляем категорию
-                if role == 'student':
-                    user_profile.category = category
                 
                 # Сохраняем профиль пользователя
                 user_profile.save()           
@@ -99,8 +102,7 @@ def administrator(request):
     redirect_result = check_user_role_and_redirect(request, 'admin')
     if redirect_result:
         return redirect_result
-    context = main(request,'admin')
-    return render(request, 'main/administrator.html', context)  # Повертає шаблон administrator.html
+    return main(request,'admin')  # Повертає шаблон administrator.html
        
 def moderator(request):
     # Проверяем роль пользователя и перенаправляем его, если это другой пользователь
@@ -151,9 +153,129 @@ def main(request, user): # Функція відображення сторін�
         context['page_title'] = 'Контакти' 
     elif request.path == f'/{user}_main/users/': # Сторінка Користувачі
         context['users'] = CustomUser.objects.all()
-        context['show_content'] = 'users'
+        context['show_content'] = 'users'    
+        show_users = request.GET.get('show', None)
+        type_select = 'Адміни'
+        found_users = False
+        if show_users == 'admin':
+            type_select = 'Адміни'
+            found_users = context['users'].filter(user_type='admin').exists()
+        elif show_users == 'moderator':
+            type_select = 'Модератори'
+            found_users = context['users'].filter(user_type='moderator').exists()
+        elif show_users == 'teacher':
+            type_select = 'Викладачі'
+            found_users = context['users'].filter(user_type='teacher').exists()
+        elif show_users == 'student':
+            type_select = 'Студенти'
+            found_users = context['users'].filter(user_type='student').exists()
+        context['show_users'] = show_users
+        context['type_select'] = type_select
         context['page_title'] = 'Користувачі'
-    return context    
+        context['found_users'] = found_users
+        if request.GET.get('profile'):
+            profile_username = request.GET.get('profile')
+            try:
+                profile_user = CustomUser.objects.get(username=profile_username)
+                context['show_content'] = 'profile'
+                context['full_name'] = profile_user.full_name
+                context['username'] = profile_user.username
+                context['email'] = profile_user.email
+                context['password'] = profile_user.password
+                context['user_type'] = profile_user.user_type
+                if profile_user.is_block:
+                    context['is_block'] = 'Заблокований'
+                elif not profile_user.is_block:
+                    context['is_block'] = 'Розблокований'
+                context['page_title'] = f"Профіль користувача {profile_user.full_name}"
+                context['title'] = "Профіль користувача"
+            except CustomUser.DoesNotExist:
+            # Обработка случая, когда пользователь не найден
+                pass
+        if request.GET.get('unblock'):
+            profile_username = request.GET.get('unblock')
+            profile_user = CustomUser.objects.get(username=profile_username)
+            profile_user.is_block = False
+            profile_user.save()  # Сохраняем изменения в базе данных
+            return redirect(reverse('users') + f'?show={profile_user.user_type}')
+        if request.GET.get('block'):
+            profile_username = request.GET.get('block')
+            profile_user = CustomUser.objects.get(username=profile_username)
+            profile_user.is_block = True
+            profile_user.save()  # Сохраняем изменения в базе данных
+            return redirect(reverse('users') + f'?show={profile_user.user_type}')
+        if request.GET.get('delete'):
+            profile_username = request.GET.get('delete')
+            profile_user = CustomUser.objects.get(username=profile_username)
+            profile_user.delete()  # Удаляем пользователя из базы данных
+            return redirect(reverse('users') + f'?show={profile_user.user_type}')
+        if request.GET.get('new_user'):
+            context['show_content'] = 'new_user'
+            context['page_title'] = 'Новий користувач'
+            if request.method == 'POST':
+                form = RegistrationForm(request.POST)
+                if form.is_valid():
+                    full_name = form.cleaned_data['full_name']
+                    username = form.cleaned_data['username']
+                    password = form.cleaned_data['password']
+                    email = form.cleaned_data['email']
+                    role = form.cleaned_data['role']
+                    if role == 'admin':
+                        blocked = False
+                    else:
+                        blocked = True
+                    # Хеширования пароля
+                    hashed_password = make_password(password)
+            
+                    # Словарь для связи роли с соответствующей моделью
+                    role_model_map = {
+                        'student': Student, 
+                        'teacher': Teacher,  
+                        'moderator': Moderator,
+                        'admin': Admin                
+                    }
+            
+                    # Проверяем, существует ли роль в карте моделей
+                    if role in role_model_map:
+                        # Получаем соответствующую модель из карты
+                        model = role_model_map[role]                
+                
+                        # Создаем новый профиль пользователя
+                        user_profile = model.objects.create(
+                            full_name=full_name,
+                            username=username,
+                            password=hashed_password,
+                            email=email,
+                            user_type=role,  # Присваиваем тип пользователя
+                            is_block=blocked
+                        )
+                
+                        # Сохраняем профиль пользователя
+                        user_profile.save()           
+            
+                    # Перенаправляем на исходную страницу
+                    return redirect(reverse('users') + f'?show=student')
+            else:
+                form = RegistrationForm()
+            context['form'] = form  # Добавляем форму в контекст, чтобы передать ее в шаблон
+    elif request.path == f'/{user}_main/account/': # Сторінка Мій профіль
+        context['show_content'] = 'account'
+        context['full_name'] = request.user.full_name
+        context['username'] = request.user.username
+        context['email'] = request.user.email
+        context['password'] = request.user.password
+        context['user_type'] = request.user.user_type
+        if request.user.is_block:
+            context['is_block'] = 'Заблокований'
+        elif not request.user.is_block:
+            context['is_block'] = 'Розблокований'
+        context['page_title'] = f"Ваш профіль {request.user.full_name}"
+        context['title'] = "Ваш профіль"
+        
+        
+    if user=='admin':user='administrator'
+    if user=='guest':user='index'
+    return render(request, f'main/{user}.html', context)   
     
 def check_user_role_and_redirect(request, expected_role):
     if request.user.is_authenticated:  # Проверяем, аутентифицирован ли пользователь
@@ -162,3 +284,36 @@ def check_user_role_and_redirect(request, expected_role):
             return redirect(f'/{role}_main/')  # Перенаправляем на соответствующую страницу
     else:
         return redirect('/guest_main/')  # Если пользователь не аутентифицирован, перенаправляем на главную страницу для гостей    
+        
+@login_required
+def update_profile(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        full_name = data.get('full_name')
+        username = data.get('login')
+        email = data.get('email')
+        password = data.get('password')
+        
+        user = CustomUser.objects.get(username=data.get('old_login'))
+
+        if full_name:
+            user.full_name = full_name
+        if username:
+            user.username = username
+        if email:
+            user.email = email
+        if password:
+            user.password = make_password(password)
+
+        try:
+            user.full_clean()
+            user.save()
+            return JsonResponse({'success': True})
+        except ValidationError as e:
+            error_dict = {}
+            for field, errors in e.message_dict.items():
+                error_dict[field] = [str(error) for error in errors]
+            return JsonResponse({'success': False, 'error': error_dict})
+
+    else:
+        return JsonResponse({'success': False, 'error': 'Невірний метод запиту'})
