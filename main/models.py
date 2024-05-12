@@ -70,3 +70,36 @@ class Teacher(CustomUser):
 
 class Student(CustomUser):
     pass
+
+class Video(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    video_file = models.FileField(upload_to='videos/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+class Question(models.Model):
+    question_text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.question_text
+
+class Answer(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
+    answer_text = models.TextField()
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.answer_text
+
+class Test(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    questions = models.ManyToManyField(Question)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title

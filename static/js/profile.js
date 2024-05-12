@@ -1,3 +1,4 @@
+// Функції для можливості редагувати профілі
 const editFullNameBtn = document.getElementById('edit_full_name');
 const editLoginBtn = document.getElementById('edit_login');
 const editEmailBtn = document.getElementById('edit_email');
@@ -42,7 +43,7 @@ editPasswordBtn.addEventListener('click', () => {
     saveChangesBtn.style.display = 'inline';
 });
 
-// Обработка сохранения изменений
+// Обробка збереження змін
 const csrfToken = Cookies.get('csrftoken');
 
 function updateProfile(fullName, login, email, password, password2) {

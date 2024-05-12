@@ -93,4 +93,41 @@ class AuthenticationForm(forms.Form):
             raise ValidationError('Невірний логін чи пароль')
         if user.is_block:
             raise ValidationError("Ваш обліковий запис заблокований або ще не підтверджений")
-        return cleaned_data     
+        return cleaned_data  
+
+class VideoForm(forms.ModelForm):
+    video_file = forms.FileField(label='Файл відео')
+    class Meta:
+        model = Video
+        fields = ['title', 'description', 'video_file']        
+        labels = {
+            'title': 'Заголовок',
+            'description': 'Опис',
+            'video_file': 'Файл відео'
+        }
+
+class TestForm(forms.ModelForm):
+    class Meta:
+        model = Test
+        fields = ['title', 'description']
+        labels = {
+            'title': 'Заголовок',
+            'description': 'Опис',
+        }
+        
+class QuestionForm(forms.ModelForm):
+    class Meta:
+        model = Question
+        fields = ['question_text']
+        labels = {
+            'question_text': 'Запитання'
+        }
+
+class AnswerForm(forms.ModelForm):
+    class Meta:
+        model = Answer
+        fields = ['answer_text', 'is_correct']    
+        labels = {
+            'answer_text': 'Відповідь',
+            'is_correct': 'Вірна'
+        }        

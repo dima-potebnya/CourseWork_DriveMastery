@@ -1,13 +1,14 @@
+// Функція виходу (деаутентифікації)
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('logout-link').addEventListener('click', function(event) {
-        event.preventDefault(); // Отменяем стандартное действие ссылки
+        event.preventDefault(); // Скасовуємо стандартну дію посилання
         
-        // Выводим диалоговое окно с подтверждением
+        // Виводимо діалогове вікно з підтвердженням
         var confirmation = confirm('Ви дійсно хочете вийти?');
         
-        // Если пользователь подтвердил выход, перенаправляем его на /logout/
+        // Якщо користувач підтвердив вихід, перенаправляємо його на /logout/
         if (confirmation) {
-            window.location.href = '/logout/'; // Перенаправляем пользователя на URL-адрес для выхода
+            window.location.href = '/logout/'; // Перенаправляємо користувача на URL-адресу для виходу
         }
     });
 });

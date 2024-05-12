@@ -68,4 +68,3 @@ AUTH_USER_MODEL = 'main.CustomUser'
 # Загружаем секретный код из файла .env
 SECRET_ADMIN_CODE = config('SECRET_ADMIN_CODE')
 
-
