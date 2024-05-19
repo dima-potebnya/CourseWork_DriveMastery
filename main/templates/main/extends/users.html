@@ -1,0 +1,108 @@
+{% if show_content == 'users' %}
+	<div class="content-section">
+		<h2>Користувачі</h2>
+		<div class="users-filter">
+        	<button class="dropdown-btn">{{ type_select }}</button>
+        	<div class="dropdown-content">
+            	{% if request.user.user_type == 'admin' %}
+				<a href="?show=admin">Адміни</a>
+            	<a href="?show=moderator">Модератори</a>
+            	<a href="?show=teacher">Викладачі</a>
+				{% endif %}
+            	<a href="?show=student">Студенти</a>
+        	</div>
+    	</div>
+		<a href="?new_user=true" class="newusr-btn">Новий користувач</a>
+    	<table>
+        	<thead>
+            	<tr>
+               	    <th>Ім'я</th>
+               		<th>Логін</th>
+               		<th>Роль</th>
+               	    <th>Дії</th>
+            	</tr>
+      		</thead>
+        	<tbody>
+            {% for user in users %}
+				{% if user.user_type == show_users %}
+					<tr>
+                	    <td>{{ user.full_name }}</td>
+                	    <td>{{ user.username }}</td>
+                	    <td>{{ user.user_type }}</td>
+                	    <td>
+                        	<a href="{% url 'users' request.user.user_type %}?profile={{ user.username }}" class="action-btn">Профіль</a>
+							{% if user.is_block %}
+								<a href="{% url 'users' request.user.user_type %}?unblock={{ user.username }}" class="action-btn-unblock">Розблокувати</a>
+							{% elif not user.is_block %}
+                        		<a href="{% url 'users' request.user.user_type %}?block={{ user.username }}" class="action-btn">Заблокувати</a>
+							{% endif %}
+                        	<a href="{% url 'users' request.user.user_type %}?delete={{ user.username }}" class="action-btn">Видалити</a>
+                	    </td>
+            		</tr>
+				{% endif %}
+            {% endfor %}
+			{% if not found_users %}
+                <tr>
+                    <td colspan="4" class="no-users-message">Облікових записів не знайдено</td>
+                </tr>
+			{% endif %}
+        	</tbody>
+    	</table>
+	</div>
+{% elif show_content == 'profile'%}
+	<h2>{{ title }}</h2>
+  	<table class="profile-table">
+    	<tr>
+            <th>Повне ім'я</th>
+            <td>
+                <span id="full_name_display">{{ full_name }}</span>
+                <input type="text" id="full_name_input" placeholder="{{ full_name }}" style="display: none;">
+            </td>
+            <td><button id="edit_full_name" class="edit-btn">Редагувати</button></td>
+        </tr>
+        <tr>
+            <th>Логін</th>
+            <td>
+                <span id="login_display">{{ username }}</span>
+                <input type="text" id="login_input" placeholder="{{ username }}" style="display: none;">
+            </td>
+            <td><button id="edit_login" class="edit-btn">Редагувати</button></td>
+        </tr>
+        <tr>
+            <th>Email</th>
+            <td>
+                <span id="email_display">{{ email }}</span>
+                <input type="text" id="email_input" placeholder="{{ email }}" style="display: none;">
+            </td>
+            <td><button id="edit_email" class="edit-btn">Редагувати</button></td>
+        </tr>
+        <tr>
+            <th>Пароль</th>
+            <td>
+                <span id="password_display">{{ password }}</span>
+                <input type="password" id="password_input" placeholder="Новий пароль" style="display: none;">
+                <input type="password" id="password_input2" placeholder="Повторіть пароль" style="display: none;">
+            </td>
+            <td><button id="edit_password" class="edit-btn">Редагувати</button></td>
+        </tr>
+    	<tr>
+      		<th>Тип користувача</th>
+      		<td>{{ user_type }}</td>
+    	</tr>
+		<tr>
+      		<th>Статус</th>
+      		<td>{{ is_block }}</td>
+    	</tr>
+  	</table>
+  	<a href="{% url 'users' request.user.user_type %}?show={{ user_type }}" class="back-button">Назад</a>
+	<button id="save_changes" style="display: none;">Зберегти</button>
+{% elif show_content == 'new_user' %}	
+	<div class="container">
+        <form action="/admin_main/users/?new_user=true" method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="Зареєструватися">
+        </form>
+    </div>
+	<a href="{% url 'users' request.user.user_type %}?show=student" class="back-button">Назад</a>
+{% endif %}

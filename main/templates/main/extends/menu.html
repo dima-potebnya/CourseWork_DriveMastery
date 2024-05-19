@@ -1,0 +1,9 @@
+{% if show_content == 'index_main' %}
+    <div class="hero-image">
+        <img src="{{ image_url }}" alt="Auto School">
+    </div>
+{% elif show_content == 'about_main' %}
+    {{ about_content|linebreaksbr }}
+{% elif show_content == 'contacts_main' %}
+    {{ contacts_content|linebreaksbr }}
+{% endif %}

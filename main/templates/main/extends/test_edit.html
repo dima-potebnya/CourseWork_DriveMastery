@@ -1,0 +1,114 @@
+{% if show_content == 'test_list' %}
+<div class="content-section">
+    <h2>Список тестів</h2>
+    <a href="{% url 'test_add' request.user.user_type %}" class="newusr-btn">Додати тест</a>
+    <table>
+        <thead>
+        	<tr>
+        		<th>Назва</th>
+        		<th>Опис</th>
+        		<th>Дії</th>
+            </tr>
+        </thead>
+        <tbody>
+           	{% for test in tests %}
+            <tr>
+            	<td>{{ test.title }}</td>
+            	<td>{{ test.description|truncatechars:100 }}</td>
+            	<td>
+            		<a href="{% url 'test_edit' user_type=request.user.user_type test_id=test.id %}" class="action-btn">Редагувати</a>
+            		<a href="{% url 'test_delete' user_type=request.user.user_type test_id=test.id %}" class="action-btn">Видалити</a>
+            	</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif show_content == 'test_edit' %}
+<div class="content-section">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+		<input type="submit" value="Зберегти">
+    </form>
+	{% if test %}
+    <h3>Запитання для тесту</h3>
+    <table>
+	    {% if test.questions.all %}
+        <thead>
+            <tr>
+                <th>Питання</th>
+                <th>Відповіді</th>
+				<th>Дії</th>
+            </tr>
+        </thead>
+		{% endif %}
+        <tbody>
+            {% for question in test.questions.all %}
+            <tr>
+                <td>{{ question.question_text }}</td>
+                <td>
+                    <ul>
+                        {% for answer in question.answers.all %}
+                        <li>{{ answer.answer_text }} ({% if answer.is_correct %}Вірно{% else %}Невірно{% endif %})</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+				<td>
+            		<a href="{% url 'question_delete' user_type=request.user.user_type test_id=test.id question_id=question.id %}" class="action-btn">Видалити</a>
+            	</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'add_test_question' user_type=request.user.user_type test_id=test.id %}" class="action-btn">Додати запитання</a>
+    {% endif %}
+</div>
+<a href="{% url 'test_list' request.user.user_type %}" class="back-button">Назад</a>
+{% elif show_content == 'test_delete' %}
+<div class="container">
+    <p>Ви дійсно хочете видалити тест "{{ test.title }}"?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="action-btn">ТАК</button>
+        <a href="{% url 'test_list' request.user.user_type %}" class="action-btn">НІ</a>
+    </form>
+</div>
+{% elif show_content == 'add_test_question' %}
+<div class="container">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Зберегти">
+    </form>
+</div>
+<a href="{% url 'test_edit' user_type=request.user.user_type test_id=test.id %}" class="back-button">Назад</a>
+{% elif show_content == 'add_test_answers' %}
+<div class="container">
+    <h2>Додати відповіді для питання<br>"{{ question.question_text }}"</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="action-btn">Зберегти</button>
+    </form>
+
+    <h3>Існуючі відповіді</h3>
+    <ul>
+        {% for answer in question.answers.all %}
+        <li>{{ answer.answer_text }} ({% if answer.is_correct %}Вірно{% else %}Невірно{% endif %})</li>
+        {% endfor %}
+    </ul>
+</div>
+{% if question.answers.all %}
+<a href="{% url 'test_edit' user_type=request.user.user_type test_id=test.id %}" class="back-button">Назад</a>
+{% endif %}
+{% elif show_content == 'question_delete' %}
+<div class="container">
+    <p>Ви дійсно хочете видалити питання "{{ question.question_text }}"?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="action-btn">ТАК</button>
+        <a href="{% url 'test_edit' user_type=request.user.user_type test_id=test.id %}" class="action-btn">НІ</a>
+    </form>
+</div>
+{% endif %}

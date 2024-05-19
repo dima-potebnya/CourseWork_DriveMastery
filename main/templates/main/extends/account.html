@@ -1,0 +1,47 @@
+{% if show_content == 'account' %}
+	<h2>{{ title }}</h2>
+  	<table class="profile-table">
+    	<tr>
+            <th>Повне ім'я</th>
+            <td>
+                <span id="full_name_display">{{ full_name }}</span>
+                <input type="text" id="full_name_input" placeholder="{{ full_name }}" style="display: none;">
+            </td>
+            <td><button id="edit_full_name" class="edit-btn">Редагувати</button></td>
+        </tr>
+        <tr>
+            <th>Логін</th>
+            <td>
+                <span id="login_display">{{ username }}</span>
+                <input type="text" id="login_input" placeholder="{{ username }}" style="display: none;">
+            </td>
+            <td><button id="edit_login" class="edit-btn">Редагувати</button></td>
+        </tr>
+        <tr>
+            <th>Email</th>
+            <td>
+                <span id="email_display">{{ email }}</span>
+                <input type="text" id="email_input" placeholder="{{ email }}" style="display: none;">
+            </td>
+            <td><button id="edit_email" class="edit-btn">Редагувати</button></td>
+        </tr>
+        <tr>
+            <th>Пароль</th>
+            <td>
+                <span id="password_display">{{ password }}</span>
+                <input type="password" id="password_input" placeholder="Новий пароль" style="display: none;">
+                <input type="password" id="password_input2" placeholder="Повторіть пароль" style="display: none;">
+            </td>
+            <td><button id="edit_password" class="edit-btn">Редагувати</button></td>
+        </tr>
+    	<tr>
+      		<th>Тип користувача</th>
+      		<td>{{ user_type }}</td>
+    	</tr>
+		<tr>
+      		<th>Статус</th>
+      		<td>{{ is_block }}</td>
+    	</tr>
+  	</table>
+	<button id="save_changes" style="display: none;">Зберегти</button>
+{% endif %}

@@ -1,0 +1,45 @@
+{% if show_content == 'video_list' %}
+    <div class="content-section">
+    	<h2>Список відео</h2>
+    	<a href="{% url 'video_add' request.user.user_type %}" class="newusr-btn">Додати відео</a>
+    	<table>
+        	<thead>
+        		<tr>
+        		    <th>Назва</th>
+        		    <th>Опис</th>
+        		    <th>Дії</th>
+        		</tr>
+        	</thead>
+        	<tbody>
+           		{% for video in videos %}
+            		<tr>
+            		    <td>{{ video.title }}</td>
+            		    <td>{{ video.description|truncatechars:100 }}</td>
+            		    <td>
+            		        <a href="{% url 'video_edit' user_type=request.user.user_type video_id=video.id %}" class="action-btn">Редагувати</a>
+            		        <a href="{% url 'video_delete' user_type=request.user.user_type video_id=video.id %}" class="action-btn">Видалити</a>
+            		    </td>
+            		</tr>
+            	{% endfor %}
+        	</tbody>
+    	</table>
+	</div>
+{% elif show_content == 'video_edit' %}
+	<div class="container">
+    	<form method="post" enctype="multipart/form-data">
+        	{% csrf_token %}
+        	{{ form.as_p }}
+			<input type="submit" value="Зберегти">
+    	</form>
+	</div>
+	<a href="{% url 'video_list' request.user.user_type %}" class="back-button">Назад</a>
+{% elif show_content == 'video_delete' %}	
+	<div class="container">
+        <p>Ви дійсно хочете видалити відео "{{ video.title }}"?</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="action-btn">ТАК</button>
+            <a href="{% url 'video_list' request.user.user_type %}" class="action-btn">НІ</a>
+        </form>
+    </div>
+{% endif %}

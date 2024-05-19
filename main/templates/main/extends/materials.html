@@ -1,0 +1,54 @@
+{% if show_content == 'materials' %}
+	<div class="materials-section">
+        <h2>Відео</h2>
+        <ul>
+            {% for video in videos %}
+                <li>
+                    <h3>{{ video.title }}</h3>
+                    <p>{{ video.description }}</p>
+                    {% if video.video_file %}
+                        <video controls>
+                            <source src="{{ video.video_file.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    
+        <h2>Тести</h2>
+        <ul>
+            {% for test in tests %}
+			{% if test.questions.all %}
+                <li><a href="{% url 'take_test' user_type=request.user.user_type test_id=test.id %}">{{ test.title }}</a></li>
+            {% endif %}
+			{% endfor %}
+        </ul>
+	</div>
+{% elif show_content == 'take_test' %}
+	<div class="test-section">
+		<h2>{{ page_title }}</h2>
+        <p>{{ test.description }}</p>
+    
+        <form method="post">
+            {% csrf_token %}
+            {% for question in questions %}
+            <div>
+                <p>{{ question.question_text }}</p>
+                {% for answer in question.answers.all %}
+                <div>
+                    <input type="radio" name="question_{{ question.id }}" value="{{ answer.id }}">
+                    <label>{{ answer.answer_text }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            <button type="submit">Відправити</button>
+        </form>
+	</div>
+{% elif show_content == 'test_result' %}
+	<div class="test-result-section">
+		<h2>{{ page_title }}</h2>
+        <p>Ваш результат: {{ score }}/{{ total_questions }}</p>
+	</div>
+{% endif %}

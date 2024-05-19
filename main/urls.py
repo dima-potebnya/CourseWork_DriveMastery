@@ -1,11 +1,10 @@
 from django.urls import path
-from django.shortcuts import redirect
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
-    path('', views.redirect_authenticated_user, name='redirect_authenticated_user'),
+    path('', views.check_user_root, name='check_user_root'),
     path('guest_main/', views.guest, name='guest'),  # URL для головної сторінки
     path('guest_main/about/', views.guest, name='about'),  # URL для сторінки про нас
     path('guest_main/contacts/', views.guest, name='contacts'),  # URL для сторінки контактів

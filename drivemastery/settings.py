@@ -7,7 +7,7 @@ SECRET_KEY = '2!#_6km*rt4f4!ubwh5*qr&!&rk1&4u$kz^bapwg&ns_8z4%g0'  # Секре�
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -16,7 +16,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'main',  # Ваш додаток
+    'main',  # Мій додаток
 ]
 
 MIDDLEWARE = [
@@ -65,6 +65,6 @@ STATICFILES_DIRS = [
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 AUTH_USER_MODEL = 'main.CustomUser'
-# Загружаем секретный код из файла .env
+# Загружаємо секретний код з файла .env
 SECRET_ADMIN_CODE = config('SECRET_ADMIN_CODE')
 

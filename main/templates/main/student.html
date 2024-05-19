@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <link rel="stylesheet" href="/static/css/users.css">
+    <link rel="stylesheet" href="/static/css/forms.css">
+    <link rel="stylesheet" href="/static/css/materials.css">
+    <script src="/static/js/logout.js"></script>
+    <script src="/static/js/form.js"></script>
+    <script src="/static/js/js.cookie.min.js"></script>
+</head>
+
+<body>
+    <!-- Навігаційна панель -->
+    <nav>
+        <div class="logo">
+            <a href="{% url 'student' %}" id="logo-link">
+                <img src="/static/png/logo.png" alt="Logo" id="logo">
+            </a>
+        </div>
+        <div class="nav-container">
+            <ul class="nav-links">
+                <li>
+                    <a href="#">Меню</a>
+                    <ul class="dropdown">
+                        <li><a href="{% url request.user.user_type %}">Головна</a></li>
+                        <li><a href="{% url 'about_main' request.user.user_type %}">Про Нас</a></li>
+                        <li><a href="{% url 'contacts_main' request.user.user_type %}">Контакти</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">Навчання</a>
+                    <ul class="dropdown">
+                        <li><a href="{% url 'materials' request.user.user_type %}">Матеріали</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">Профіль</a>
+                    <ul class="dropdown">
+                        <li><a href="{% url 'account' request.user.user_type %}">Особисті дані</a></li>
+                        <li><a href="#" id="logout-link">Вихід</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Заголовок-->
+    <header>
+        <h1>{{ page_title }}</h1>
+    </header>
+
+    <!-- Основний вміст сторінки -->
+    <main>
+        {% include 'main/extends/menu.html' %} 
+        {% include 'main/extends/account.html' %} 
+        {% include 'main/extends/materials.html' %}
+    </main>
+    <!-- Підвал -->
+    <footer>
+        <div class="footer-logo">
+            <img src="/static/png/footer.png" alt="Footer Logo">
+        </div>
+        <div class="footer-text">Powered by Potebnia Dmytro © 2024</div>
+    </footer>
+    <script src="/static/js/profile.js"></script>
+</body>
+
+</html>

@@ -6,17 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Реєстрація</title>
 	<link rel="stylesheet" href="/static/css/styles.css">
-    <link rel="stylesheet" href="/static/css/reg.css">
-	<script src="/static/js/render.js"></script>
-	<script src="/static/js/logout.js"></script>
-	<script src="/static/js/registration_form.js"></script>
+    <link rel="stylesheet" href="/static/css/forms.css">
+	<script src="/static/js/form.js"></script>
 </head>
 <body>
     <!-- Навігаційна панель -->
     <nav>
         <div class="logo">
             <a href="/" id="logo-link">
-                <img src="/static/png/logo1.png" alt="Logo" id="logo">
+                <img src="/static/png/logo.png" alt="Logo" id="logo">
             </a>
         </div>
         <ul class="nav-links">
@@ -35,15 +33,6 @@
     </header>
 	<!-- Основний вміст сторінки -->
 	<main>
-	    {% if user.is_authenticated %}
-        <h1 style="text-align: center; ">Success!</h1>
-        <p style="text-align: center; ">Congratulations, you have successfully registered!</p>
-		<form id="logout-form" action="{% url 'logout' %}"  method="post">
-            {% csrf_token %}
-			<input type="hidden" name="next" value="{{ request.path }}">
-            <input type="submit" value="Вийти">
-        </form>
-		{% else %}
         <div class="container">
             <form action="/guest_main/register/" method="post">
                 {% csrf_token %}
@@ -51,7 +40,6 @@
                 <input type="submit" value="Зареєструватися">
             </form>
         </div>
-		{% endif %}
     </main>
 	<!-- Підвал -->
     <footer>

@@ -6,28 +6,26 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Submit
+from django.http import JsonResponse, HttpResponseForbidden
 from .forms import *
 from .models import *        
 import json   
     
-def guest(request):
-    if request.user.is_authenticated: # Проверка если пользователь вошёл (то перенаправляем его в его страницу)
-        role = request.user.user_type  # Получаем роль пользователя
-        return redirect(f'/{role}_main/')  # Перенаправляем на соответствующую страницу
-    else: # Если не вошёл показываем содержимое главной страницы
-        return main(request,'guest')  # Повертає шаблон administrator.html  
+def guest(request): # Функція головної сторінки гостя
+    if request.user.is_authenticated: # Перевірка якщо користувач увійшов (то перенаправляємо його на його сторінку)
+        role = request.user.user_type  # Отримуємо роль користувача
+        return redirect(f'/{role}_main/')  # Перенаправляємо на відповідну сторінку
+    else: # Якщо не увійшов показуємо вміст головної сторінки
+        return main(request,'guest')
 
-def redirect_authenticated_user(request):
-    if request.user.is_authenticated:
-        role = request.user.user_type  # Получаем роль пользователя
-        return redirect(f'/{role}_main/')  # Перенаправляем на соответствующую страницу
-    else:
+def check_user_root(request): # Функція перевірки користувача і перенаправлення на відповідну сторінку
+    if request.user.is_authenticated: # Перевірка якщо користувач увійшов (то перенаправляємо його на його сторінку)
+        role = request.user.user_type  # Отримуємо роль користувача
+        return redirect(f'/{role}_main/')  # Перенаправляємо на відповідну сторінку
+    else: # Якщо не увійшов перенаправляємо на сторінку гостя
         return redirect('/guest_main/')
 
-def register(request):
+def register(request): # Функція реєстрації
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
@@ -36,14 +34,14 @@ def register(request):
             password = form.cleaned_data['password']
             email = form.cleaned_data['email']
             role = form.cleaned_data['role']
-            if role == 'admin':
+            if role == 'admin': # При реєстрації автоматично блокуємо всіх окрім адміна
                 blocked = False
             else:
                 blocked = True
-            # Хеширования пароля
+            # Хешування паролю
             hashed_password = make_password(password)
             
-            # Словарь для связи роли с соответствующей моделью
+            # Словник для зв'язку ролі з відповідною моделлю
             role_model_map = {
                 'student': Student, 
                 'teacher': Teacher,  
@@ -51,79 +49,80 @@ def register(request):
                 'admin': Admin                
             }
             
-            # Проверяем, существует ли роль в карте моделей
+            # Перевіряємо, чи існує роль у карті моделей
             if role in role_model_map:
-                # Получаем соответствующую модель из карты
+                # Отримуємо відповідну модель із карти
                 model = role_model_map[role]                
                 
-                # Создаем новый профиль пользователя
+                # Створюємо новий профіль користувача
                 user_profile = model.objects.create(
                     full_name=full_name,
                     username=username,
                     password=hashed_password,
                     email=email,
-                    user_type=role,  # Присваиваем тип пользователя
+                    user_type=role,  # Присвоюємо тип користувача
                     is_block=blocked
                 )
                 
-                # Сохраняем профиль пользователя
+                # Зберігаємо профіль користувача
                 user_profile.save()           
             
-            # Перенаправляем на страницу авторизации
+            # Перенаправляємо на сторінку авторизації
             return redirect('login')
     else:
         form = RegistrationForm()
     return render(request, 'main/register.html', {'form': form})
     
-def login_view(request):
+def login_view(request): # Функція авторизації
     if request.method == 'POST':
-        form = AuthenticationForm(request.POST)
+        form = AuthenticationForm(request.POST) # Хаваємо форму
         if form.is_valid():
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
-            user = authenticate(request, username=username, password=password)
+            user = authenticate(request, username=username, password=password) # Пробуємо автентифікувати
             if user is not None:
-                login(request, user)
+                login(request, user) # Записуємо сесію для користувача
                 return redirect(user.user_type)
             else: #"Неправильний логін"
-                return redirect('login')  # Redirect back to login page
+                return redirect('login')  # Перенаправлення на сторінку входу
     else:
         form = AuthenticationForm()
     return render(request, 'main/login.html', {'form': form})   
-    
-def admin(request):
-    # Проверяем роль пользователя и перенаправляем его, если это другой пользователь
-    redirect_result = check_user_role_and_redirect(request, 'admin')
-    if redirect_result:
-        return redirect_result
-    return main(request,'admin')  # Повертає шаблон administrator.html
-       
-def moderator(request):
-    # Проверяем роль пользователя и перенаправляем его, если это другой пользователь
-    redirect_result = check_user_role_and_redirect(request, 'moderator')
-    if redirect_result:
-        return redirect_result
-    return render(request, 'main/moderator.html')  # Повертає шаблон moderator.html
 
-def teacher(request):
-    # Проверяем роль пользователя и перенаправляем его, если это другой пользователь
-    redirect_result = check_user_role_and_redirect(request, 'teacher')
-    if redirect_result:
-        return redirect_result
-    return render(request, 'main/teacher.html')  # Повертає шаблон teacher.html
+@login_required    
+def admin(request): # Функція адміна
+    # Перевіряємо, чи є роль користувача дозволеною
+    if request.user.user_type not in ['admin']:
+        return HttpResponseForbidden()
+    return main(request,'admin')  # Повертає шаблон admin.html
 
-def student(request):
-    # Проверяем роль пользователя и перенаправляем его, если это другой пользователь
-    redirect_result = check_user_role_and_redirect(request, 'student')
-    if redirect_result:
-        return redirect_result
-    return render(request, 'main/student.html')  # Повертає шаблон student.html  
+@login_required       
+def moderator(request): # Функція модератора
+    # Перевіряємо, чи є роль користувача дозволеною
+    if request.user.user_type not in ['moderator']:
+        return HttpResponseForbidden()
+    return main(request, 'moderator')  # Повертає шаблон moderator.html
 
-def logout_view(request):
+@login_required 
+def teacher(request): # Функція викладача
+    # Перевіряємо, чи є роль користувача дозволеною
+    if request.user.user_type not in ['teacher']:
+        return HttpResponseForbidden()
+    return main(request, 'teacher')  # Повертає шаблон teacher.html
+
+@login_required 
+def student(request): # Функція студента
+    # Перевіряємо, чи є роль користувача дозволеною
+    if request.user.user_type not in ['student']:
+        return HttpResponseForbidden()
+    return main(request, 'student')  # Повертає шаблон student.html  
+
+@login_required 
+def logout_view(request): # Функція виходу
     logout(request)
-    return redirect('/')  # Перенаправление на index.html после выхода    
+    return redirect('/')  # Перенаправлення на guest.html після виходу  
     
-def main(request, user_type): # Функція відображення сторінок
+def main(request, user_type): # Функція основної інформації
     page_title = "Ласкаво просимо до DriveMastery"
     image_url = "/static/png/autoschool.png"
     about_content = "Ми команда DriveMastery, яка працює для того, щоб надати вам найкращі послуги в галузі автомобільного навчання та підготовки. Наша місія - зробити водіння безпечним і комфортним для кожного. Ми пропонуємо широкий спектр послуг, від підготовки новачків до водіння до професійної підготовки водіїв важких транспортних засобів. З нами ви зможете вивчити та отримати всю необхідну інформацію про правила дорожнього руху, безпеку на дорогах та особливості керування різними типами автомобілів. Не соромтеся звертатися до нас за допомогою або консультацією - ми завжди готові допомогти вам!"
@@ -135,8 +134,7 @@ def main(request, user_type): # Функція відображення стор
         'about_content': about_content,
         'contacts_content': contacts_content
     }
-
-    # Определяем, какой контент отображать на основе URL
+    # Визначаємо, який контент відображати на основі URL
     if request.path == f'/{user_type}_main/':
         context['show_content'] = 'index_main'
     elif request.path == f'/{user_type}_main/about/':
@@ -145,19 +143,10 @@ def main(request, user_type): # Функція відображення стор
     elif request.path == f'/{user_type}_main/contacts/':
         context['show_content'] = 'contacts_main'
         context['page_title'] = 'Контакти' 
-
     return render(request, f'main/{user_type}.html', context)   
     
-def check_user_role_and_redirect(request, expected_role):
-    if request.user.is_authenticated:  # Проверяем, аутентифицирован ли пользователь
-        role = request.user.user_type  # Получаем роль пользователя
-        if role != expected_role:  # Если роль пользователя не соответствует ожидаемой
-            return redirect(f'/{role}_main/')  # Перенаправляем на соответствующую страницу
-    else:
-        return redirect('/guest_main/')  # Если пользователь не аутентифицирован, перенаправляем на главную страницу для гостей    
-        
 @login_required
-def update_profile(request):
+def update_profile(request): # Функція "оновити профіль"
     if request.method == 'POST':
         data = json.loads(request.body)
         full_name = data.get('full_name')
@@ -166,7 +155,7 @@ def update_profile(request):
         password = data.get('password')
         
         user = CustomUser.objects.get(username=data.get('old_login'))
-
+        # Покрокова перевірка існуючих змін
         if full_name:
             user.full_name = full_name
         if username:
@@ -177,10 +166,10 @@ def update_profile(request):
             user.password = make_password(password)
 
         try:
-            user.full_clean()
-            user.save()
+            user.full_clean() # Оновлення даних
+            user.save() # Збереження
             return JsonResponse({'success': True})
-        except ValidationError as e:
+        except ValidationError as e: # Якщо помилка, то передаємо її
             error_dict = {}
             for field, errors in e.message_dict.items():
                 error_dict[field] = [str(error) for error in errors]
@@ -190,19 +179,25 @@ def update_profile(request):
         return JsonResponse({'success': False, 'error': 'Невірний метод запиту'})
 
 @login_required
-def users(request, users_type):
+def users(request, users_type): # Функція "користувачі"
+    # Перевіряємо, чи є роль користувача дозволеною
+    if users_type not in ['admin', 'teacher']:
+        return HttpResponseForbidden()
     user_types_mapping = {
         'admin': 'Адміни',
         'moderator': 'Модератори',
         'teacher': 'Викладачі',
         'student': 'Студенти'
     }
-    show_users = request.GET.get('show', None)
+    if users_type == 'teacher': # Дозволяємо вчителю керувати тільки студентами
+        show_users = 'student'
+    else: # Або ж якщо адмін то усіма
+        show_users = request.GET.get('show', None)
     type_select = None
     users = CustomUser.objects.all()
     if show_users in user_types_mapping:
-        type_select = user_types_mapping[show_users]
-        found_users = users.filter(user_type=show_users).exists()
+        type_select = user_types_mapping[show_users] # Вивід укр інформації хто це
+        found_users = users.filter(user_type=show_users).exists() # Змінна перевірки існування записів у БД
     else:
         found_users = False
     context = {
@@ -213,7 +208,7 @@ def users(request, users_type):
         'page_title': 'Користувачі',
         'found_users': found_users
     }
-    if request.GET.get('profile'):
+    if request.GET.get('profile'): # Якщо нажали на "Профіль"
         profile_username = request.GET.get('profile')
         profile_user = CustomUser.objects.get(username=profile_username)           
         context = {
@@ -226,28 +221,28 @@ def users(request, users_type):
             'page_title': f"Профіль користувача {profile_user.full_name}",
             'title': "Профіль користувача"
         }
-        if profile_user.is_block:
+        if profile_user.is_block: # Якщо користувач заблокований
             context['is_block'] = 'Заблокований'
         elif not profile_user.is_block:
             context['is_block'] = 'Розблокований'           
-    if request.GET.get('unblock'):
+    if request.GET.get('unblock'): # Можливість розблокувати
         profile_username = request.GET.get('unblock')
         profile_user = CustomUser.objects.get(username=profile_username)
         profile_user.is_block = False
-        profile_user.save()  # Сохраняем изменения в базе данных
-        return redirect(reverse('users') + f'?show={profile_user.user_type}')
-    if request.GET.get('block'):
+        profile_user.save()  # Зберігаємо зміни в базі даних
+        return redirect(reverse('users', kwargs={'users_type': users_type}) + f'?show={profile_user.user_type}')
+    if request.GET.get('block'): # Можливість заблокувати
         profile_username = request.GET.get('block')
         profile_user = CustomUser.objects.get(username=profile_username)
         profile_user.is_block = True
-        profile_user.save()  # Сохраняем изменения в базе данных
-        return redirect(reverse('users') + f'?show={profile_user.user_type}')
-    if request.GET.get('delete'):
+        profile_user.save()  # Зберігаємо зміни в базі даних
+        return redirect(reverse('users', kwargs={'users_type': users_type}) + f'?show={profile_user.user_type}')
+    if request.GET.get('delete'): # Можливість видалити
         profile_username = request.GET.get('delete')
         profile_user = CustomUser.objects.get(username=profile_username)
-        profile_user.delete()  # Удаляем пользователя из базы данных
-        return redirect(reverse('users') + f'?show={profile_user.user_type}')
-    if request.GET.get('new_user'):
+        profile_user.delete()  # Видаляємо користувача з бази даних
+        return redirect(reverse('users', kwargs={'users_type': users_type}) + f'?show={profile_user.user_type}')
+    if request.GET.get('new_user'): # Можливість додати нового користувача з адмін/викладач панелі
         context['show_content'] = 'new_user'
         context['page_title'] = 'Новий користувач'
         if request.method == 'POST':
@@ -262,10 +257,10 @@ def users(request, users_type):
                     blocked = False
                 else:
                     blocked = True
-                # Хеширования пароля
+                # Хешування пароля
                 hashed_password = make_password(password)
         
-                # Словарь для связи роли с соответствующей моделью
+                # Словник для зв'язку ролі з відповідною моделлю
                 role_model_map = {
                     'student': Student, 
                     'teacher': Teacher,  
@@ -273,33 +268,33 @@ def users(request, users_type):
                     'admin': Admin                
                 }
         
-                # Проверяем, существует ли роль в карте моделей
+                # Перевіряємо, чи існує роль у карті моделей
                 if role in role_model_map:
-                    # Получаем соответствующую модель из карты
+                    # Отримуємо відповідну модель із карти
                     model = role_model_map[role]                
             
-                    # Создаем новый профиль пользователя
+                    # Створюємо новий профіль користувача
                     user_profile = model.objects.create(
                         full_name=full_name,
                         username=username,
                         password=hashed_password,
                         email=email,
-                        user_type=role,  # Присваиваем тип пользователя
+                        user_type=role,  # Присвоюємо тип користувача
                         is_block=blocked
                     )
             
-                    # Сохраняем профиль пользователя
+                    # Зберігаємо профіль користувача
                     user_profile.save()           
         
-                # Перенаправляем на исходную страницу
-                return redirect(reverse('users') + f'?show=student')
+                # Перенаправляємо на вихідну сторінку
+                return redirect(reverse('users', kwargs={'users_type': users_type}) + f'?show=student')
         else:
             form = RegistrationForm()
-        context['form'] = form  # Добавляем форму в контекст, чтобы передать ее в шаблон
+        context['form'] = form  # Додаємо форму в контекст, щоб передати її в шаблон
     return render(request, f'main/{users_type}.html', context)
 
 @login_required
-def account(request, user_type):
+def account(request, user_type): # Функція свого профілю
     context = {
         'show_content': 'account',
         'full_name': request.user.full_name,
@@ -315,8 +310,9 @@ def account(request, user_type):
     elif not request.user.is_block:
         context['is_block'] = 'Розблокований'
     return render(request, f'main/{user_type}.html', context)
-        
-def materials(request, user_type):
+
+@login_required        
+def materials(request, user_type): # Функція "Матеріали"
     videos = Video.objects.all()
     tests = Test.objects.all()
     context = {
@@ -327,7 +323,8 @@ def materials(request, user_type):
     }
     return render(request, f'main/{user_type}.html', context) 
 
-def take_test(request, user_type, test_id):
+@login_required
+def take_test(request, user_type, test_id): # Функція "пройти тест"
     test = Test.objects.get(id=test_id)
     questions = test.questions.all()
     if request.method == 'POST':
@@ -353,8 +350,11 @@ def take_test(request, user_type, test_id):
         }
         return render(request, f'main/{user_type}.html', context)        
 
-# Представление для списка видео        
+@login_required # Функція для списку відео        
 def video_list(request, user_type):
+    # Перевіряємо, чи є роль користувача дозволеною
+    if user_type not in ['admin', 'teacher', 'moderator']:
+        return HttpResponseForbidden()
     context = {
         'show_content': 'video_list',
         'page_title': 'Список відео',
@@ -362,8 +362,11 @@ def video_list(request, user_type):
     }
     return render(request, f'main/{user_type}.html', context)   
 
-# Представление для добавления/редактирования видео
+@login_required # Функція для додавання/редагування відео
 def video_edit(request, user_type, video_id=None):
+    # Перевіряємо, чи є роль користувача дозволеною
+    if user_type not in ['admin', 'teacher', 'moderator']:
+        return HttpResponseForbidden()
     context = {
         'show_content': 'video_edit',
         'page_title': 'Редагувати відео',
@@ -384,15 +387,18 @@ def video_edit(request, user_type, video_id=None):
     context['form'] = form
     return render(request, f'main/{user_type}.html', context)    
     
-# Представление для удаления видео
+@login_required # Функція для видалення відео
 def video_delete(request, user_type, video_id):
+    # Перевіряємо, чи є роль користувача дозволеною
+    if user_type not in ['admin', 'teacher', 'moderator']:
+        return HttpResponseForbidden()
     video = get_object_or_404(Video, id=video_id)
     if request.method == 'POST':
-        # Получаем путь к файлу видео
+        # Отримуємо шлях до файлу відео
         video_file_path = video.video_file.path
-        # Удаляем запись из базы данных
+        # Видаляємо запис із бази даних
         video.delete()
-        # Удаляем файл видео из хранилища
+        # Видаляємо файл відео зі сховища
         default_storage.delete(video_file_path)
         return redirect(reverse('video_list', kwargs={'user_type': user_type}))
     context = {
@@ -402,8 +408,11 @@ def video_delete(request, user_type, video_id):
     }
     return render(request, f'main/{user_type}.html', context)  
 
-# Представление для списка тестов
+@login_required # Функція для списку тестів
 def test_list(request, user_type):
+    # Перевіряємо, чи є роль користувача дозволеною
+    if user_type not in ['admin', 'teacher', 'moderator']:
+        return HttpResponseForbidden()
     context = {
         'show_content': 'test_list',
         'page_title': 'Список тестів',
@@ -411,8 +420,11 @@ def test_list(request, user_type):
     }
     return render(request, f'main/{user_type}.html', context)
 
-# Представление для добавления/редактирования теста
+@login_required # Функція для додавання/редагування тесту
 def test_edit(request, user_type, test_id=None):
+    # Перевіряємо, чи є роль користувача дозволеною
+    if user_type not in ['admin', 'teacher', 'moderator']:
+        return HttpResponseForbidden()
     context = {
         'show_content': 'test_edit',
         'page_title': 'Редагувати тест',
@@ -434,15 +446,18 @@ def test_edit(request, user_type, test_id=None):
     context['form'] = form
     return render(request, f'main/{user_type}.html', context)    
 
-# Представление для удаления теста
+@login_required # Функція для видалення тесту
 def test_delete(request, user_type, test_id):
+    # Перевіряємо, чи є роль користувача дозволеною
+    if user_type not in ['admin', 'teacher', 'moderator']:
+        return HttpResponseForbidden()
     test = get_object_or_404(Test, id=test_id)
     if request.method == 'POST':
-        # Удаляем все вопросы, связанные с тестом
+        # Видаляємо всі питання, пов'язані з тестом
         question = Question.objects.filter(test=test)
         question.delete()
 
-        # Удаляем сам тест
+        # Видаляємо сам тест
         test.delete()
         return redirect(reverse('test_list', kwargs={'user_type': user_type}))
     context = {
@@ -451,8 +466,12 @@ def test_delete(request, user_type, test_id):
         'test': test
     }
     return render(request, f'main/{user_type}.html', context)    
-    
+
+@login_required # Функція для додавання запитання
 def add_test_question(request, user_type, test_id):
+    # Перевіряємо, чи є роль користувача дозволеною
+    if user_type not in ['admin', 'teacher', 'moderator']:
+        return HttpResponseForbidden()
     context = {
         'show_content': 'add_test_question',
         'page_title': 'Додати запитання',
@@ -470,7 +489,11 @@ def add_test_question(request, user_type, test_id):
     context['form'] = question_form
     return render(request, f'main/{user_type}.html', context)
 
+@login_required # Функція для додавання відповідей
 def add_test_answers(request, user_type, test_id, question_id):
+    # Перевіряємо, чи є роль користувача дозволеною
+    if user_type not in ['admin', 'teacher', 'moderator']:
+        return HttpResponseForbidden()
     test = get_object_or_404(Test, id=test_id)
     question = get_object_or_404(Question, id=question_id)
     if request.method == 'POST':
@@ -491,16 +514,19 @@ def add_test_answers(request, user_type, test_id, question_id):
     }
     return render(request, f'main/{user_type}.html', context)    
     
-# Представление для удаления вопроса
+@login_required # Представление для видалення питання
 def question_delete(request, user_type, test_id, question_id):
+    # Перевіряємо, чи є роль користувача дозволеною
+    if user_type not in ['admin', 'teacher', 'moderator']:
+        return HttpResponseForbidden()
     test = get_object_or_404(Test, id=test_id)
     question = get_object_or_404(Question, id=question_id)
     if request.method == 'POST':
-        # Удаляем все ответы, связанные с вопросом
+        # Видаляємо всі відповіді, пов'язані із запитанням
         answers = Answer.objects.filter(question=question)
         answers.delete()
 
-        # Удаляем сам вопрос
+        # Видаляємо саме питання
         question.delete()
         return redirect(reverse('test_edit', kwargs={'user_type': user_type, 'test_id': test.id}))
     context = {
